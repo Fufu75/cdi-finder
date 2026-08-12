@@ -12,29 +12,29 @@ propre clé API.
 
 ---
 
-## ✨ Fonctionnalités
+## Fonctionnalités
 
-- 🔐 **Comptes personnels** — connexion e-mail, données isolées par utilisateur (RLS Postgres).
-- 🎁 **Gratuit par défaut** — modèles open-source (Llama…) via Groq, aucune clé à saisir.
-- 🔑 **Ou ta clé, ton usage** — **Anthropic**, **OpenAI** ou **Gemini** : ta clé est
+- **Comptes personnels** — connexion e-mail, données isolées par utilisateur (RLS Postgres).
+- **Gratuit par défaut** — modèles open-source (Llama…) via Groq, aucune clé à saisir.
+- **Ou ta clé, ton usage** — **Anthropic**, **OpenAI** ou **Gemini** : ta clé est
   **chiffrée** (AES-256-GCM) avant stockage, jamais renvoyée au navigateur.
-- 📄 **Import de CV** — dépose ton CV (PDF / DOCX) ou colle son texte : le modèle en extrait
+- **Import de CV** — dépose ton CV (PDF / DOCX) ou colle son texte : le modèle en extrait
   automatiquement ton profil (tu relis avant d'enregistrer).
-- 🎯 **Génération ciblée** — colle une offre (texte ou URL) → CV + lettre adaptés aux
+- **Génération ciblée** — colle une offre (texte ou URL) → CV + lettre adaptés aux
   mots-clés ATS de l'offre.
-- 🇫🇷🇬🇧 **Français ou anglais** — au choix, contenu *et* titres de sections du `.docx`.
-- ✅ **CV, lettre, ou les deux** — tu choisis ce que tu génères.
-- 📋 **Suivi** — statut de chaque candidature (brouillon → envoyée → entretien → offre).
-- ⬇️ **Export `.docx`** compatible ATS (une colonne, titres standards, pas de tableau).
+- **Français ou anglais** — au choix, contenu *et* titres de sections du `.docx`.
+- **CV, lettre, ou les deux** — tu choisis ce que tu génères.
+- **Suivi** — statut de chaque candidature (brouillon → envoyée → entretien → offre).
+- **Export `.docx`** compatible ATS (une colonne, titres standards, pas de tableau).
 
-## 🧱 Stack
+## Stack
 
 Next.js 15 (App Router, TypeScript) · Tailwind CSS · Supabase (Postgres + Auth) ·
 Anthropic Claude / OpenAI / Gemini / Groq · docx / unpdf / mammoth · déployé sur Vercel.
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ### 1. Base de données Supabase
 
@@ -87,7 +87,7 @@ Crée un compte → **Paramètres** (mode gratuit, ou ta clé) → **Mon profil*
 
 ---
 
-## 📁 Structure
+## Structure
 
 ```
 app/
@@ -103,16 +103,16 @@ lib/                        # anthropic, crypto, docx, ingestion, cvparse, supab
 supabase/schema.sql         # à exécuter dans Supabase (idempotent)
 ```
 
-## 🔒 Sécurité
+## Sécurité
 
 - Secrets (`.env*`) et données personnelles (`profil/profil.json`) sont **hors git**.
   `profil/profil.example.json` fournit la structure avec des données fictives.
 - Les clés API sont chiffrées au repos et déchiffrées uniquement côté serveur, à l'appel.
 
-## ⚙️ Commandes
+## Commandes
 
 ```bash
 npm run dev         # développement
-npm run build       # build production   (⚠️ pas en même temps que `dev`)
+npm run build       # build production   ( pas en même temps que `dev`)
 npm run typecheck   # vérification TypeScript
 ```
