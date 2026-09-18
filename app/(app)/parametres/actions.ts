@@ -4,12 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/crypto";
 import { PROVIDERS, isProvider, type Provider } from "@/lib/providers";
-
-const COLS: Record<Exclude<Provider, "free">, { enc: string; last4: string }> = {
-  anthropic: { enc: "anthropic_key_encrypted", last4: "key_last4" },
-  openai: { enc: "openai_key_encrypted", last4: "openai_key_last4" },
-  gemini: { enc: "gemini_key_encrypted", last4: "gemini_key_last4" },
-};
+import { KEY_COLUMNS } from "@/lib/keys";
+import { genererJeton, hashJeton } from "@/lib/mcp/token";
 
 export async function saveSettings(formData: FormData) {
   const supabase = await createClient();
@@ -36,8 +32,8 @@ export async function saveSettings(formData: FormData) {
     if (prefix && !apiKey.startsWith(prefix)) {
       return { error: `La clé ${PROVIDERS[provider].label} doit commencer par « ${prefix} ».` };
     }
-    payload[COLS[provider].enc] = encrypt(apiKey);
-    payload[COLS[provider].last4] = apiKey.slice(-4);
+    payload[KEY_COLUMNS[provider].enc] = encrypt(apiKey);
+    payload[KEY_COLUMNS[provider].last4] = apiKey.slice(-4);
   }
 
   const { error } = await supabase
@@ -45,6 +41,58 @@ export async function saveSettings(formData: FormData) {
     .upsert(payload, { onConflict: "user_id" });
 
   if (error) return { error: error.message };
+
+  revalidatePath("/parametres");
+  return { ok: true };
+}
+
+// ─── Jeton MCP (piloter CDI Finder depuis claude.ai) ────────────────────────
+
+function messageMcp(message: string): string {
+  return /mcp_token/.test(message)
+    ? "Colonnes MCP absentes en base : rejoue supabase/schema.sql dans Supabase."
+    : message;
+}
+
+export async function genererJetonMcp(): Promise<{ token?: string; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Non authentifié." };
+
+  const token = genererJeton();
+  const { error } = await supabase.from("user_settings").upsert(
+    {
+      user_id: user.id,
+      mcp_token_hash: hashJeton(token),
+      mcp_token_last4: token.slice(-4),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  );
+  if (error) return { error: messageMcp(error.message) };
+
+  revalidatePath("/parametres");
+  return { token }; // affiché une seule fois : seul le hash est stocké
+}
+
+export async function revoquerJetonMcp(): Promise<{ ok?: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Non authentifié." };
+
+  const { error } = await supabase
+    .from("user_settings")
+    .update({
+      mcp_token_hash: null,
+      mcp_token_last4: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", user.id);
+  if (error) return { error: messageMcp(error.message) };
 
   revalidatePath("/parametres");
   return { ok: true };

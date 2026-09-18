@@ -19,6 +19,9 @@ __pycache__/
 .venv/
 venv/
 
+# Notes perso (non versionnées)
+antiseche-mcp.html
+
 # Sorties générées
 sorties/*.docx
 suivi.xlsx

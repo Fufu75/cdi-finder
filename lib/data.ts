@@ -1,7 +1,7 @@
 // Helpers de lecture de données côté serveur.
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { decrypt } from "@/lib/crypto";
+import { CREDS_SELECT, credsFromRow, type Creds } from "@/lib/keys";
 import { PROVIDERS, isProvider, type Provider } from "@/lib/providers";
 import type { Candidature, Profil } from "@/lib/types";
 
@@ -10,13 +10,6 @@ export async function getProfil(): Promise<Profil> {
   const { data } = await supabase.from("profiles").select("data").maybeSingle();
   return (data?.data as Profil) ?? {};
 }
-
-// Colonnes de stockage (clé chiffrée + 4 derniers caractères) par fournisseur.
-const COLS: Record<Exclude<Provider, "free">, { enc: string; last4: string }> = {
-  anthropic: { enc: "anthropic_key_encrypted", last4: "key_last4" },
-  openai: { enc: "openai_key_encrypted", last4: "openai_key_last4" },
-  gemini: { enc: "gemini_key_encrypted", last4: "gemini_key_last4" },
-};
 
 export interface Settings {
   provider: Provider;
@@ -56,34 +49,26 @@ export async function getSettings(): Promise<Settings> {
 }
 
 // Renvoie la clé du fournisseur actif, en clair — usage serveur uniquement, à l'appel.
-export async function getDecryptedKey(): Promise<{
-  provider: Provider;
-  key: string;
-  model: string;
-} | null> {
+export async function getDecryptedKey(): Promise<Creds | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("user_settings")
-    .select(
-      "provider, model, anthropic_key_encrypted, openai_key_encrypted, gemini_key_encrypted"
-    )
+    .select(CREDS_SELECT)
     .maybeSingle();
-  if (!data) return null;
+  return credsFromRow((data ?? null) as Record<string, string | null> | null);
+}
 
+// Jeton MCP distant. Requête isolée : si la migration n'a pas encore été jouée
+// (colonnes absentes), on renvoie simplement "aucun jeton" sans casser la page.
+export async function getMcpToken(): Promise<{ actif: boolean; last4: string | null }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("user_settings")
+    .select("mcp_token_hash, mcp_token_last4")
+    .maybeSingle();
+  if (error || !data) return { actif: false, last4: null };
   const row = data as Record<string, string | null>;
-  const provider: Provider = isProvider(row.provider) ? row.provider : "free";
-  const model = row.model || PROVIDERS[provider].defaultModel;
-
-  // "free" : clé Groq partagée, côté serveur (jamais celle de l'utilisateur).
-  if (provider === "free") {
-    const key = process.env.GROQ_API_KEY;
-    return key ? { provider, key, model } : null;
-  }
-
-  const enc = row[COLS[provider].enc];
-  if (!enc) return null;
-
-  return { provider, key: decrypt(enc), model };
+  return { actif: !!row.mcp_token_hash, last4: row.mcp_token_last4 ?? null };
 }
 
 export async function getCandidatures(): Promise<Candidature[]> {

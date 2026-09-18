@@ -30,8 +30,8 @@ export const PROVIDERS: Record<
     label: "Anthropic (Claude)",
     keyPrefix: "sk-ant-",
     keyHint: "sk-ant-…",
-    defaultModel: "claude-opus-4-8",
-    models: ["claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5"],
+    defaultModel: "claude-opus-5",
+    models: ["claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"],
   },
   openai: {
     label: "OpenAI (GPT)",

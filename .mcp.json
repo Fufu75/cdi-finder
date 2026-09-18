@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "cdi-finder": {
+      "command": "npx",
+      "args": ["-y", "tsx", "mcp/stdio.ts"]
+    }
+  }
+}

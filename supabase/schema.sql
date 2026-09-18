@@ -33,6 +33,12 @@ alter table public.user_settings add column if not exists gemini_key_last4 text;
 alter table public.user_settings alter column provider set default 'free';   -- nouveaux comptes = gratuit
 alter table public.user_settings alter column model set default '';          -- modèle par défaut du fournisseur
 
+-- Jeton d'accès MCP distant (claude.ai) : on ne stocke que le SHA-256 du jeton.
+alter table public.user_settings add column if not exists mcp_token_hash text;
+alter table public.user_settings add column if not exists mcp_token_last4 text;
+create unique index if not exists user_settings_mcp_token_hash_idx
+  on public.user_settings (mcp_token_hash) where mcp_token_hash is not null;
+
 -- ─── 3. Candidatures (offre + documents générés) ───────────────────────────
 create table if not exists public.candidatures (
   id              uuid primary key default gen_random_uuid(),
